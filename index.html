@@ -391,7 +391,7 @@
 
         <section class="py-24 px-4 text-center max-w-4xl mx-auto">
             <div
-                class="bg-white/60 backdrop-blur-xl p-8 md:p-14 rounded-lg border border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
+                class="bg-white/60 backdrop-blur-xl p-8 md:p-14 rounded-lg border border-white/60 shadow-[0_8px_30px_rgba(0,0,0,0.08)] relative overflow-hidden">
                 <span
                     class="text-xs uppercase tracking-[0.3em] text-[#b5952f] font-bold block mb-2 drop-shadow-sm">RSVP</span>
                 <h3 class="font-serif-elegant text-4xl text-[#1c211d] tracking-wide mb-3 drop-shadow-sm">Kindly Confirm
@@ -401,6 +401,10 @@
                 </p>
 
                 <form id="rsvp-form" class="space-y-6 max-w-xl mx-auto text-left relative">
+
+                    <div style="position: absolute; left: -5000px;" aria-hidden="true">
+                        <input type="text" id="bot-check" name="bot-check" tabindex="-1" value="" autocomplete="off">
+                    </div>
 
                     <div id="loading-overlay"
                         class="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 hidden flex-col items-center justify-center rounded-md">
@@ -515,6 +519,25 @@
                         <p id="success-title" class="text-[#2a302b] font-semibold text-sm">Thank you!</p>
                         <p id="success-text" class="text-[#424d45] text-xs mt-1">Your RSVP has been securely received.
                         </p>
+                    </div>
+
+                    <div id="form-duplicate"
+                        class="hidden mt-6 p-4 bg-white/70 border border-[#e6cc80] rounded-md shadow-inner text-center transition-all duration-300">
+                        <svg class="mx-auto h-8 w-8 text-[#b5952f] mb-2" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                        <p class="text-[#2a302b] font-semibold text-sm">We already have an RSVP for this email!</p>
+                        <p class="text-[#424d45] text-xs mt-2 mb-4 leading-relaxed">If you need to update your RSVP or
+                            believe this is an error, please contact us directly:</p>
+                        <div class="flex flex-col gap-2 text-xs font-bold text-[#1c211d]">
+                            <p>Groom's Side: <a href="tel:+94771234567" class="text-[#b5952f] hover:underline">+94 77
+                                    123 4567</a></p>
+                            <p>Bride's Side: <a href="tel:+94777654321" class="text-[#b5952f] hover:underline">+94 77
+                                    765 4321</a></p>
+                        </div>
                     </div>
                 </form>
             </div>

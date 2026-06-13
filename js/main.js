@@ -174,33 +174,28 @@ function initializeCountdown() {
 // 4. RSVP FORM VALIDATION & GOOGLE SHEETS SUBMISSION
 // ==========================================
 
-// Your live Google Web App URL
 const scriptURL = 'https://script.google.com/macros/s/AKfycbwMJ9GR0wUVTq2eWudGRYt4tTDkgtgUGqUDhr1Ye46WPEO_khkQLAnF4m2R_-xO0ElI/exec';
 
 function setupRSVPValidation() {
     const form = document.getElementById('rsvp-form');
     
     if (form) {
-        // --- NEW: Handle disabling Guest Dropdown on decline ---
         const attendanceRadios = form.querySelectorAll('input[name="Attendance"]');
         const guestDropdown = document.getElementById('GuestCount');
 
         attendanceRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
                 if (e.target.value === 'FALSE') {
-                    // Clear the selection and visually disable the dropdown
                     guestDropdown.value = ""; 
                     guestDropdown.disabled = true;
                     guestDropdown.classList.add('opacity-50', 'cursor-not-allowed');
                 } else {
-                    // Re-enable the dropdown
                     guestDropdown.disabled = false;
                     guestDropdown.classList.remove('opacity-50', 'cursor-not-allowed');
                 }
             });
         });
 
-        // --- Form Submission Logic ---
         form.addEventListener('submit', function(e) {
             e.preventDefault(); 
             
@@ -208,12 +203,30 @@ function setupRSVPValidation() {
             const errorMessage = document.getElementById('error-message');
             const loadingOverlay = document.getElementById('loading-overlay');
             const successBox = document.getElementById('form-success');
+            const duplicateBox = document.getElementById('form-duplicate');
             const submitBtn = document.getElementById('submit-btn');
             const clearBtn = document.getElementById('clear-btn'); 
             const successTitle = document.getElementById('success-title');
             const successText = document.getElementById('success-text');
 
             errorBox.classList.add('hidden');
+            successBox.classList.add('hidden');
+            duplicateBox.classList.add('hidden');
+            
+            // --- SECURITY: Honeypot Check ---
+            const honeypot = document.getElementById('bot-check').value;
+            if (honeypot !== "") {
+                // Fake success for spam bots to trap them
+                loadingOverlay.classList.remove('hidden');
+                loadingOverlay.classList.add('flex');
+                setTimeout(() => {
+                    loadingOverlay.classList.add('hidden');
+                    loadingOverlay.classList.remove('flex');
+                    successBox.classList.remove('hidden');
+                    form.reset();
+                }, 1000);
+                return; 
+            }
             
             const name = form['Name'].value.trim();
             const email = form['Email'].value.trim();
@@ -223,13 +236,11 @@ function setupRSVPValidation() {
             let errors = [];
 
             if (!name) errors.push("• Please enter your full name.");
-            
             if (!email) {
                 errors.push("• Please enter your email address.");
             } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 errors.push("• Please enter a valid email address format.");
             }
-            
             if (!attendance) {
                 errors.push("• Please let us know if you will be attending.");
             } else if (attendance.value === 'TRUE' && !guests) {
@@ -243,47 +254,52 @@ function setupRSVPValidation() {
                 return;
             }
 
-            // Show loading state
             loadingOverlay.classList.remove('hidden');
             loadingOverlay.classList.add('flex');
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
             clearBtn.classList.add('hidden'); 
 
-            // Send data to Google Sheets via fetch with mode: 'no-cors'
-            fetch(scriptURL, { method: 'POST', body: new FormData(form), mode: 'no-cors' })
-                .then(response => {
-                    // Hide loading indicator
+            // Standard fetch (No CORS mode) so we can read the JSON response
+            fetch(scriptURL, { method: 'POST', body: new FormData(form) })
+                .then(response => response.json())
+                .then(data => {
                     loadingOverlay.classList.add('hidden');
                     loadingOverlay.classList.remove('flex');
-                    successBox.classList.remove('hidden');
                     
-                    // Dynamically change text based on attendance choice
-                    if (attendance && attendance.value === 'FALSE') {
-                        successTitle.textContent = "You will be missed!";
-                        successText.textContent = "Thank you for letting us know. We appreciate you keeping us updated.";
+                    if (data.result === 'duplicate') {
+                        // Display the elegant duplicate warning box
+                        duplicateBox.classList.remove('hidden');
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        duplicateBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
                     } else {
-                        successTitle.textContent = "We can't wait to celebrate!";
-                        successText.textContent = "Your RSVP has been securely received. Thank you!";
-                    }
+                        // Success Logic
+                        successBox.classList.remove('hidden');
+                        if (attendance && attendance.value === 'FALSE') {
+                            successTitle.textContent = "You will be missed!";
+                            successText.textContent = "Thank you for letting us know. We appreciate you keeping us updated.";
+                        } else {
+                            successTitle.textContent = "We can't wait to celebrate!";
+                            successText.textContent = "Your RSVP has been securely received. Thank you!";
+                        }
 
-                    // Reset form & buttons 
-                    form.reset();
-                    submitBtn.disabled = false;
-                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    
-                    // Reset dropdown visual state just in case
-                    guestDropdown.disabled = false;
-                    guestDropdown.classList.remove('opacity-50', 'cursor-not-allowed');
-                    
-                    successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
-                    setTimeout(() => {
-                        successBox.classList.add('hidden');
-                    }, 8000);
+                        form.reset();
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        guestDropdown.disabled = false;
+                        guestDropdown.classList.remove('opacity-50', 'cursor-not-allowed');
+                        
+                        successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        setTimeout(() => {
+                            successBox.classList.add('hidden');
+                        }, 8000);
+                    }
                 })
                 .catch(error => {
-                    // Handle Errors
+                    // Fallback for strict browser CORS blocks or network errors
                     loadingOverlay.classList.add('hidden');
                     loadingOverlay.classList.remove('flex');
                     submitBtn.disabled = false;
@@ -327,9 +343,9 @@ function setupFormClearLogic() {
     clearBtn.addEventListener('click', () => {
         form.reset();
         document.getElementById('form-error').classList.add('hidden'); 
+        document.getElementById('form-duplicate').classList.add('hidden');
         clearBtn.classList.add('hidden'); 
         
-        // Ensure dropdown is re-enabled if it was disabled by declining
         guestDropdown.disabled = false;
         guestDropdown.classList.remove('opacity-50', 'cursor-not-allowed');
     });
