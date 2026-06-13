@@ -1,5 +1,5 @@
 // ==========================================
-// 1. GLOWING DUST / BOKEH ENGINE (CANVAS)
+// 1. FALLING PETALS ENGINE (CANVAS)
 // ==========================================
 const canvas = document.getElementById('flower-canvas');
 const ctx = canvas.getContext('2d');
@@ -18,26 +18,24 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// The Glowing Dust Particle Object
+// The Falling Petal Object (Previously Glowing Dust)
 class GlowingDust {
     constructor() {
         this.x = Math.random() * window.innerWidth;
         this.y = Math.random() * -window.innerHeight * 0.5; 
-        this.size = Math.random() * 3.5 + 1.5; // Slightly larger so they are visible on light backgrounds
+        this.size = Math.random() * 3.5 + 1.5; 
         
         this.baseSpeedY = Math.random() * 0.4 + 0.15; 
         this.speedY = this.baseSpeedY + (Math.random() * 1.5 + 1.0); 
         this.angle = Math.random() * Math.PI * 2; 
         
-        // Increased base opacity to stand out against the bright white background
         this.baseOpacity = Math.random() * 0.5 + 0.3; 
 
-        // UPDATED: Theme-matching colors!
-        // We randomly assign each dust particle one of your beautiful palette colors
+        // Theme-matching colors for the petals
         const themes = [
             { fill: '#d4af37', glow: '#b5952f' }, // Rich Gold
             { fill: '#c28c94', glow: '#9c666e' }, // Dusty Pink
-            { fill: '#8b1c31', glow: '#5e1020' }  // Burgundy touch
+            { fill: '#8b1c31', glow: '#5e1020' }  // Burgundy
         ];
         this.theme = themes[Math.floor(Math.random() * themes.length)];
     }
@@ -62,16 +60,25 @@ class GlowingDust {
         ctx.save();
         
         let currentOpacity = this.baseOpacity + Math.sin(this.angle * 2) * 0.2;
-        // Keep minimum opacity higher so they don't vanish entirely
         if (currentOpacity < 0.15) currentOpacity = 0.15;
         if (currentOpacity > 0.9) currentOpacity = 0.9;
         
         ctx.globalAlpha = currentOpacity;
         
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        // Translate to the particle's X/Y coordinate so we can rotate it
+        ctx.translate(this.x, this.y);
+        // Slowly rotate the petal as it falls based on its angle
+        ctx.rotate(this.angle * 0.5); 
         
-        // Apply the randomized palette colors
+        ctx.beginPath();
+        
+        // UPDATED: Draw an organic petal shape using quadratic curves instead of a circle
+        ctx.moveTo(0, -this.size);
+        ctx.quadraticCurveTo(this.size * 1.5, -this.size, this.size * 1.5, 0);
+        ctx.quadraticCurveTo(this.size * 1.5, this.size * 1.5, 0, this.size * 2);
+        ctx.quadraticCurveTo(-this.size * 1.5, this.size * 1.5, -this.size * 1.5, 0);
+        ctx.quadraticCurveTo(-this.size * 1.5, -this.size, 0, -this.size);
+        
         ctx.fillStyle = this.theme.fill; 
         ctx.shadowBlur = this.size * 3; 
         ctx.shadowColor = this.theme.glow; 
@@ -81,7 +88,7 @@ class GlowingDust {
     }
 }
 
-// Function to start the magical dust
+// Function to start the falling petals
 function startMagicDust() {
     canvas.classList.remove('opacity-0');
     canvas.classList.add('opacity-100');
@@ -93,7 +100,7 @@ function startMagicDust() {
     animateDust();
 }
 
-// Function to keep the dust moving frame-by-frame
+// Function to keep the petals moving frame-by-frame
 function animateDust() {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     particles.forEach(p => {
