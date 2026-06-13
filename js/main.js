@@ -174,13 +174,33 @@ function initializeCountdown() {
 // 4. RSVP FORM VALIDATION & GOOGLE SHEETS SUBMISSION
 // ==========================================
 
-// PASTE YOUR GOOGLE WEB APP URL HERE:
+// Your live Google Web App URL
 const scriptURL = 'https://script.google.com/macros/s/AKfycbwMJ9GR0wUVTq2eWudGRYt4tTDkgtgUGqUDhr1Ye46WPEO_khkQLAnF4m2R_-xO0ElI/exec';
 
 function setupRSVPValidation() {
     const form = document.getElementById('rsvp-form');
     
     if (form) {
+        // --- NEW: Handle disabling Guest Dropdown on decline ---
+        const attendanceRadios = form.querySelectorAll('input[name="Attendance"]');
+        const guestDropdown = document.getElementById('GuestCount');
+
+        attendanceRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'FALSE') {
+                    // Clear the selection and visually disable the dropdown
+                    guestDropdown.value = ""; 
+                    guestDropdown.disabled = true;
+                    guestDropdown.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    // Re-enable the dropdown
+                    guestDropdown.disabled = false;
+                    guestDropdown.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        });
+
+        // --- Form Submission Logic ---
         form.addEventListener('submit', function(e) {
             e.preventDefault(); 
             
@@ -190,24 +210,31 @@ function setupRSVPValidation() {
             const successBox = document.getElementById('form-success');
             const submitBtn = document.getElementById('submit-btn');
             const clearBtn = document.getElementById('clear-btn'); 
+            const successTitle = document.getElementById('success-title');
+            const successText = document.getElementById('success-text');
 
             errorBox.classList.add('hidden');
             
             const name = form['Name'].value.trim();
             const email = form['Email'].value.trim();
             const attendance = form.querySelector('input[name="Attendance"]:checked');
-            const guests = form['GuestCount'].value;
+            const guests = guestDropdown.value;
 
             let errors = [];
 
             if (!name) errors.push("• Please enter your full name.");
+            
             if (!email) {
                 errors.push("• Please enter your email address.");
             } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 errors.push("• Please enter a valid email address format.");
             }
-            if (!attendance) errors.push("• Please let us know if you will be attending.");
-            if (!guests) errors.push("• Please select the number of guests.");
+            
+            if (!attendance) {
+                errors.push("• Please let us know if you will be attending.");
+            } else if (attendance.value === 'TRUE' && !guests) {
+                errors.push("• Please select the number of guests.");
+            }
 
             if (errors.length > 0) {
                 errorMessage.innerHTML = errors.join('<br>');
@@ -218,34 +245,47 @@ function setupRSVPValidation() {
 
             // Show loading state
             loadingOverlay.classList.remove('hidden');
+            loadingOverlay.classList.add('flex');
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
             clearBtn.classList.add('hidden'); 
 
-            // Send data to Google Sheets
-            fetch(scriptURL, { method: 'POST', body: new FormData(form) })
+            // Send data to Google Sheets via fetch with mode: 'no-cors'
+            fetch(scriptURL, { method: 'POST', body: new FormData(form), mode: 'no-cors' })
                 .then(response => {
-                    // Hide loading, show success
+                    // Hide loading indicator
                     loadingOverlay.classList.add('hidden');
+                    loadingOverlay.classList.remove('flex');
                     successBox.classList.remove('hidden');
                     
-                    // Reset form fields
+                    // Dynamically change text based on attendance choice
+                    if (attendance && attendance.value === 'FALSE') {
+                        successTitle.textContent = "You will be missed!";
+                        successText.textContent = "Thank you for letting us know. We appreciate you keeping us updated.";
+                    } else {
+                        successTitle.textContent = "We can't wait to celebrate!";
+                        successText.textContent = "Your RSVP has been securely received. Thank you!";
+                    }
+
+                    // Reset form & buttons 
                     form.reset();
-                    
-                    // Reset buttons
                     submitBtn.disabled = false;
                     submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                     
+                    // Reset dropdown visual state just in case
+                    guestDropdown.disabled = false;
+                    guestDropdown.classList.remove('opacity-50', 'cursor-not-allowed');
+                    
                     successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     
-                    // Hide success message after 7 seconds
                     setTimeout(() => {
                         successBox.classList.add('hidden');
-                    }, 7000);
+                    }, 8000);
                 })
                 .catch(error => {
                     // Handle Errors
                     loadingOverlay.classList.add('hidden');
+                    loadingOverlay.classList.remove('flex');
                     submitBtn.disabled = false;
                     submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                     clearBtn.classList.remove('hidden'); 
@@ -264,9 +304,9 @@ function setupRSVPValidation() {
 function setupFormClearLogic() {
     const form = document.getElementById('rsvp-form');
     const clearBtn = document.getElementById('clear-btn');
+    const guestDropdown = document.getElementById('GuestCount');
     if (!form || !clearBtn) return;
 
-    // Checks if any form field currently has a value
     const checkFields = () => {
         const name = form['Name'].value;
         const email = form['Email'].value;
@@ -274,7 +314,6 @@ function setupFormClearLogic() {
         const guests = form['GuestCount'].value;
         const message = form['Message'].value;
 
-        // If at least one field has data, show the button. Otherwise, hide it.
         if (name || email || attendance || guests || message) {
             clearBtn.classList.remove('hidden');
         } else {
@@ -282,14 +321,16 @@ function setupFormClearLogic() {
         }
     };
 
-    // Listen for typing and dropdown changes
     form.addEventListener('input', checkFields);
     form.addEventListener('change', checkFields);
 
-    // Wipe the form completely when clicked
     clearBtn.addEventListener('click', () => {
         form.reset();
-        document.getElementById('form-error').classList.add('hidden'); // Hide errors if any were visible
-        clearBtn.classList.add('hidden'); // Hide the button again
+        document.getElementById('form-error').classList.add('hidden'); 
+        clearBtn.classList.add('hidden'); 
+        
+        // Ensure dropdown is re-enabled if it was disabled by declining
+        guestDropdown.disabled = false;
+        guestDropdown.classList.remove('opacity-50', 'cursor-not-allowed');
     });
 }

@@ -506,14 +506,15 @@
                     </div>
 
                     <div id="form-success"
-                        class="hidden mt-6 p-4 bg-[#f4f7f5] border border-[#a1b5a5] rounded-md shadow-inner text-center">
+                        class="hidden mt-6 p-4 bg-[#f4f7f5] border border-[#a1b5a5] rounded-md shadow-inner text-center transition-all duration-300">
                         <svg class="mx-auto h-8 w-8 text-[#5c6e60] mb-2" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <p class="text-[#2a302b] font-semibold text-sm">Thank you!</p>
-                        <p class="text-[#424d45] text-xs mt-1">Your RSVP has been securely received.</p>
+                        <p id="success-title" class="text-[#2a302b] font-semibold text-sm">Thank you!</p>
+                        <p id="success-text" class="text-[#424d45] text-xs mt-1">Your RSVP has been securely received.
+                        </p>
                     </div>
                 </form>
             </div>
