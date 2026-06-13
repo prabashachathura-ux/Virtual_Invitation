@@ -1,12 +1,11 @@
 // ==========================================
-// 1. FALLING PETALS ENGINE (CANVAS)
+// 1. GLOWING DUST / BOKEH ENGINE (CANVAS)
 // ==========================================
 const canvas = document.getElementById('flower-canvas');
 const ctx = canvas.getContext('2d');
 let particles = [];
 let animationFrameId;
 
-// Resize canvas to fit screen & fix blurriness on high-resolution displays
 function resizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
     canvas.width = window.innerWidth * dpr;
@@ -18,7 +17,6 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// The Falling Petal Object (Previously Glowing Dust)
 class GlowingDust {
     constructor() {
         this.x = Math.random() * window.innerWidth;
@@ -31,11 +29,10 @@ class GlowingDust {
         
         this.baseOpacity = Math.random() * 0.5 + 0.3; 
 
-        // Theme-matching colors for the petals
         const themes = [
-            { fill: '#d4af37', glow: '#b5952f' }, // Rich Gold
-            { fill: '#c28c94', glow: '#9c666e' }, // Dusty Pink
-            { fill: '#8b1c31', glow: '#5e1020' }  // Burgundy
+            { fill: '#d4af37', glow: '#b5952f' }, 
+            { fill: '#c28c94', glow: '#9c666e' }, 
+            { fill: '#8b1c31', glow: '#5e1020' }  
         ];
         this.theme = themes[Math.floor(Math.random() * themes.length)];
     }
@@ -58,26 +55,13 @@ class GlowingDust {
 
     draw() {
         ctx.save();
-        
         let currentOpacity = this.baseOpacity + Math.sin(this.angle * 2) * 0.2;
         if (currentOpacity < 0.15) currentOpacity = 0.15;
         if (currentOpacity > 0.9) currentOpacity = 0.9;
         
         ctx.globalAlpha = currentOpacity;
-        
-        // Translate to the particle's X/Y coordinate so we can rotate it
-        ctx.translate(this.x, this.y);
-        // Slowly rotate the petal as it falls based on its angle
-        ctx.rotate(this.angle * 0.5); 
-        
         ctx.beginPath();
-        
-        // UPDATED: Draw an organic petal shape using quadratic curves instead of a circle
-        ctx.moveTo(0, -this.size);
-        ctx.quadraticCurveTo(this.size * 1.5, -this.size, this.size * 1.5, 0);
-        ctx.quadraticCurveTo(this.size * 1.5, this.size * 1.5, 0, this.size * 2);
-        ctx.quadraticCurveTo(-this.size * 1.5, this.size * 1.5, -this.size * 1.5, 0);
-        ctx.quadraticCurveTo(-this.size * 1.5, -this.size, 0, -this.size);
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         
         ctx.fillStyle = this.theme.fill; 
         ctx.shadowBlur = this.size * 3; 
@@ -88,19 +72,15 @@ class GlowingDust {
     }
 }
 
-// Function to start the falling petals
 function startMagicDust() {
     canvas.classList.remove('opacity-0');
     canvas.classList.add('opacity-100');
-    
-    // Create 60 particles
     for (let i = 0; i < 60; i++) { 
         particles.push(new GlowingDust());
     }
     animateDust();
 }
 
-// Function to keep the petals moving frame-by-frame
 function animateDust() {
     ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     particles.forEach(p => {
@@ -109,7 +89,6 @@ function animateDust() {
     });
     animationFrameId = requestAnimationFrame(animateDust);
 }
-
 
 // ==========================================
 // 2. ENVELOPE OPEN ANIMATION SEQUENCE
@@ -153,17 +132,17 @@ function openEnvelope() {
     }, 5000); 
 }
 
-
 // ==========================================
-// 3. INITIALIZATION & COUNTDOWN
+// 3. INITIALIZATION
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     document.body.style.overflowY = 'hidden';
     initializeCountdown();
+    setupRSVPValidation();
+    setupFormClearLogic(); 
 });
 
 function initializeCountdown() {
-    // Target Date: August 23, 2026 at 17:30 (5:30 PM)
     const targetDate = new Date("August 23, 2026 17:30:00").getTime();
 
     const interval = setInterval(() => {
@@ -189,4 +168,128 @@ function initializeCountdown() {
         document.getElementById("minutes").innerText = String(m).padStart(2, '0');
         document.getElementById("seconds").innerText = String(s).padStart(2, '0');
     }, 1000);
+}
+
+// ==========================================
+// 4. RSVP FORM VALIDATION & GOOGLE SHEETS SUBMISSION
+// ==========================================
+
+// PASTE YOUR GOOGLE WEB APP URL HERE:
+const scriptURL = 'https://script.google.com/macros/s/AKfycbwMJ9GR0wUVTq2eWudGRYt4tTDkgtgUGqUDhr1Ye46WPEO_khkQLAnF4m2R_-xO0ElI/exec';
+
+function setupRSVPValidation() {
+    const form = document.getElementById('rsvp-form');
+    
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            
+            const errorBox = document.getElementById('form-error');
+            const errorMessage = document.getElementById('error-message');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const successBox = document.getElementById('form-success');
+            const submitBtn = document.getElementById('submit-btn');
+            const clearBtn = document.getElementById('clear-btn'); 
+
+            errorBox.classList.add('hidden');
+            
+            const name = form['Name'].value.trim();
+            const email = form['Email'].value.trim();
+            const attendance = form.querySelector('input[name="Attendance"]:checked');
+            const guests = form['GuestCount'].value;
+
+            let errors = [];
+
+            if (!name) errors.push("• Please enter your full name.");
+            if (!email) {
+                errors.push("• Please enter your email address.");
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errors.push("• Please enter a valid email address format.");
+            }
+            if (!attendance) errors.push("• Please let us know if you will be attending.");
+            if (!guests) errors.push("• Please select the number of guests.");
+
+            if (errors.length > 0) {
+                errorMessage.innerHTML = errors.join('<br>');
+                errorBox.classList.remove('hidden');
+                errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            // Show loading state
+            loadingOverlay.classList.remove('hidden');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            clearBtn.classList.add('hidden'); 
+
+            // Send data to Google Sheets
+            fetch(scriptURL, { method: 'POST', body: new FormData(form) })
+                .then(response => {
+                    // Hide loading, show success
+                    loadingOverlay.classList.add('hidden');
+                    successBox.classList.remove('hidden');
+                    
+                    // Reset form fields
+                    form.reset();
+                    
+                    // Reset buttons
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    
+                    successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    // Hide success message after 7 seconds
+                    setTimeout(() => {
+                        successBox.classList.add('hidden');
+                    }, 7000);
+                })
+                .catch(error => {
+                    // Handle Errors
+                    loadingOverlay.classList.add('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    clearBtn.classList.remove('hidden'); 
+                    
+                    errorMessage.innerHTML = "There was a network issue submitting your RSVP. Please try again.";
+                    errorBox.classList.remove('hidden');
+                    console.error('Error!', error.message);
+                });
+        });
+    }
+}
+
+// ==========================================
+// 5. DYNAMIC CLEAR FORM LOGIC
+// ==========================================
+function setupFormClearLogic() {
+    const form = document.getElementById('rsvp-form');
+    const clearBtn = document.getElementById('clear-btn');
+    if (!form || !clearBtn) return;
+
+    // Checks if any form field currently has a value
+    const checkFields = () => {
+        const name = form['Name'].value;
+        const email = form['Email'].value;
+        const attendance = form.querySelector('input[name="Attendance"]:checked');
+        const guests = form['GuestCount'].value;
+        const message = form['Message'].value;
+
+        // If at least one field has data, show the button. Otherwise, hide it.
+        if (name || email || attendance || guests || message) {
+            clearBtn.classList.remove('hidden');
+        } else {
+            clearBtn.classList.add('hidden');
+        }
+    };
+
+    // Listen for typing and dropdown changes
+    form.addEventListener('input', checkFields);
+    form.addEventListener('change', checkFields);
+
+    // Wipe the form completely when clicked
+    clearBtn.addEventListener('click', () => {
+        form.reset();
+        document.getElementById('form-error').classList.add('hidden'); // Hide errors if any were visible
+        clearBtn.classList.add('hidden'); // Hide the button again
+    });
 }
