@@ -1,5 +1,5 @@
 // ==========================================
-// 1. GLOWING DUST / BOKEH ENGINE (CANVAS)
+// 1. FALLING PETALS ENGINE (CANVAS)
 // ==========================================
 const canvas = document.getElementById('flower-canvas');
 const ctx = canvas.getContext('2d');
@@ -17,57 +17,60 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-class GlowingDust {
+class Petal {
     constructor() {
         this.x = Math.random() * window.innerWidth;
-        this.y = Math.random() * -window.innerHeight * 0.5; 
-        this.size = Math.random() * 3.5 + 1.5; 
+        this.y = Math.random() * -window.innerHeight; 
         
-        this.baseSpeedY = Math.random() * 0.4 + 0.15; 
-        this.speedY = this.baseSpeedY + (Math.random() * 1.5 + 1.0); 
+        this.size = Math.random() * 6 + 4; 
+        
+        this.speedY = Math.random() * 1.2 + 0.6; 
+        this.speedX = Math.random() * 1.5 - 0.75; 
+        
         this.angle = Math.random() * Math.PI * 2; 
+        this.spin = Math.random() * 0.04 - 0.02; 
         
-        this.baseOpacity = Math.random() * 0.5 + 0.3; 
+        // Increased base opacity so they are less transparent
+        this.opacity = Math.random() * 0.5 + 0.5;
 
-        const themes = [
-            { fill: '#d4af37', glow: '#b5952f' }, 
-            { fill: '#c28c94', glow: '#9c666e' }, 
-            { fill: '#8b1c31', glow: '#5e1020' }  
-        ];
-        this.theme = themes[Math.floor(Math.random() * themes.length)];
+        // Richer colors drawn directly from your palette (Dusty Pink, Gold, Soft Rose)
+        const colors = ['#C88A87', '#d69fa0', '#C5A365', '#f2dada'];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
     }
 
     update() {
-        if (this.speedY > this.baseSpeedY) {
-            this.speedY -= 0.01; 
-        }
-        
         this.y += this.speedY;
-        this.x += Math.sin(this.angle) * 0.3; 
-        this.angle += 0.02;
+        this.x += Math.sin(this.angle) * 0.4 + this.speedX; 
+        this.angle += this.spin;
 
         if (this.y > window.innerHeight + 20) {
             this.y = -20;
             this.x = Math.random() * window.innerWidth;
-            this.speedY = this.baseSpeedY; 
+        }
+        if (this.x > window.innerWidth + 20 || this.x < -20) {
+            this.x = Math.random() * window.innerWidth;
+            this.y = -20;
         }
     }
 
     draw() {
         ctx.save();
-        let currentOpacity = this.baseOpacity + Math.sin(this.angle * 2) * 0.2;
-        if (currentOpacity < 0.15) currentOpacity = 0.15;
-        if (currentOpacity > 0.9) currentOpacity = 0.9;
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.globalAlpha = this.opacity;
+        ctx.fillStyle = this.color;
         
-        ctx.globalAlpha = currentOpacity;
+        // Added a subtle shadow to lift the petals off the background
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetY = 2;
+        
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        
-        ctx.fillStyle = this.theme.fill; 
-        ctx.shadowBlur = this.size * 3; 
-        ctx.shadowColor = this.theme.glow; 
-        
+        ctx.moveTo(0, -this.size); 
+        ctx.bezierCurveTo(this.size * 0.8, -this.size * 0.5, this.size, this.size * 0.8, 0, this.size * 1.2); 
+        ctx.bezierCurveTo(-this.size, this.size * 0.8, -this.size * 0.8, -this.size * 0.5, 0, -this.size);
         ctx.fill();
+        
         ctx.restore();
     }
 }
@@ -75,8 +78,8 @@ class GlowingDust {
 function startMagicDust() {
     canvas.classList.remove('opacity-0');
     canvas.classList.add('opacity-100');
-    for (let i = 0; i < 60; i++) { 
-        particles.push(new GlowingDust());
+    for (let i = 0; i < 40; i++) { 
+        particles.push(new Petal());
     }
     animateDust();
 }
@@ -125,6 +128,8 @@ function openEnvelope() {
         mainContent.classList.add('opacity-100');
         document.body.style.overflowY = 'auto';
         
+        handleScrollReveal();
+        
         setTimeout(() => {
             curtain.style.display = 'none';
         }, 1500); 
@@ -133,7 +138,7 @@ function openEnvelope() {
 }
 
 // ==========================================
-// 3. INITIALIZATION
+// 3. INITIALIZATION & SCROLL REVEALS
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
     document.body.style.overflowY = 'hidden';
@@ -141,6 +146,21 @@ document.addEventListener("DOMContentLoaded", () => {
     setupRSVPValidation();
     setupFormClearLogic(); 
 });
+
+function handleScrollReveal() {
+    const reveals = document.querySelectorAll(".reveal");
+    for (let i = 0; i < reveals.length; i++) {
+        const windowHeight = window.innerHeight;
+        const elementTop = reveals[i].getBoundingClientRect().top;
+        const elementVisible = 100;
+
+        if (elementTop < windowHeight - elementVisible) {
+            reveals[i].classList.add("active");
+        }
+    }
+}
+
+window.addEventListener("scroll", handleScrollReveal);
 
 function initializeCountdown() {
     const targetDate = new Date("August 23, 2026 17:30:00").getTime();
@@ -213,10 +233,8 @@ function setupRSVPValidation() {
             successBox.classList.add('hidden');
             duplicateBox.classList.add('hidden');
             
-            // --- SECURITY: Honeypot Check ---
             const honeypot = document.getElementById('bot-check').value;
             if (honeypot !== "") {
-                // Fake success for spam bots to trap them
                 loadingOverlay.classList.remove('hidden');
                 loadingOverlay.classList.add('flex');
                 setTimeout(() => {
@@ -260,7 +278,6 @@ function setupRSVPValidation() {
             submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
             clearBtn.classList.add('hidden'); 
 
-            // Standard fetch (No CORS mode) so we can read the JSON response
             fetch(scriptURL, { method: 'POST', body: new FormData(form) })
                 .then(response => response.json())
                 .then(data => {
@@ -268,14 +285,12 @@ function setupRSVPValidation() {
                     loadingOverlay.classList.remove('flex');
                     
                     if (data.result === 'duplicate') {
-                        // Display the elegant duplicate warning box
                         duplicateBox.classList.remove('hidden');
                         submitBtn.disabled = false;
                         submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                         duplicateBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         
                     } else {
-                        // Success Logic
                         successBox.classList.remove('hidden');
                         if (attendance && attendance.value === 'FALSE') {
                             successTitle.textContent = "You will be missed!";
@@ -299,7 +314,6 @@ function setupRSVPValidation() {
                     }
                 })
                 .catch(error => {
-                    // Fallback for strict browser CORS blocks or network errors
                     loadingOverlay.classList.add('hidden');
                     loadingOverlay.classList.remove('flex');
                     submitBtn.disabled = false;
@@ -320,7 +334,7 @@ function setupRSVPValidation() {
 function setupFormClearLogic() {
     const form = document.getElementById('rsvp-form');
     const clearBtn = document.getElementById('clear-btn');
-    const guestDropdown = document.getElementById('GuestCount');
+    const GuestCount = document.getElementById('GuestCount');
     if (!form || !clearBtn) return;
 
     const checkFields = () => {
@@ -346,7 +360,7 @@ function setupFormClearLogic() {
         document.getElementById('form-duplicate').classList.add('hidden');
         clearBtn.classList.add('hidden'); 
         
-        guestDropdown.disabled = false;
-        guestDropdown.classList.remove('opacity-50', 'cursor-not-allowed');
+        GuestCount.disabled = false;
+        GuestCount.classList.remove('opacity-50', 'cursor-not-allowed');
     });
 }
