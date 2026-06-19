@@ -1,4 +1,40 @@
 // ==========================================
+// 0. CONFIGURATION INJECTION ENGINE
+// ==========================================
+function applyConfiguration() {
+    if (typeof WeddingConfig === 'undefined') {
+        console.error("WeddingConfig is missing! Make sure config.js is loaded.");
+        return;
+    }
+
+    // Helper to safely get nested object properties (e.g., "couple.namesMain")
+    const getNestedValue = (obj, path) => {
+        return path.split('.').reduce((acc, part) => acc && acc[part], obj);
+    };
+
+    // Inject Text/HTML Content
+    document.querySelectorAll('[data-config]').forEach(el => {
+        const path = el.getAttribute('data-config');
+        const value = getNestedValue(WeddingConfig, path);
+        if (value) el.innerHTML = value;
+    });
+
+    // Inject Links (href)
+    document.querySelectorAll('[data-config-href]').forEach(el => {
+        const path = el.getAttribute('data-config-href');
+        const value = getNestedValue(WeddingConfig, path);
+        if (value) el.setAttribute('href', value);
+    });
+
+    // Inject Iframe Sources (src)
+    document.querySelectorAll('[data-config-src]').forEach(el => {
+        const path = el.getAttribute('data-config-src');
+        const value = getNestedValue(WeddingConfig, path);
+        if (value) el.setAttribute('src', value);
+    });
+}
+
+// ==========================================
 // 1. FALLING PETALS ENGINE (CANVAS)
 // ==========================================
 const canvas = document.getElementById('flower-canvas');
@@ -21,20 +57,15 @@ class Petal {
     constructor() {
         this.x = Math.random() * window.innerWidth;
         this.y = Math.random() * -window.innerHeight; 
-        
         this.size = Math.random() * 6 + 4; 
-        
         this.speedY = Math.random() * 1.2 + 0.6; 
         this.speedX = Math.random() * 1.5 - 0.75; 
-        
         this.angle = Math.random() * Math.PI * 2; 
         this.spin = Math.random() * 0.04 - 0.02; 
-        
-        // Increased base opacity so they are less transparent
         this.opacity = Math.random() * 0.5 + 0.5;
 
-        // Richer colors drawn directly from your palette (Dusty Pink, Gold, Soft Rose)
-        const colors = ['#C88A87', '#d69fa0', '#C5A365', '#f2dada'];
+        // Pull colors from the new Config file!
+        const colors = WeddingConfig.theme.petalColors || ['#C88A87', '#d69fa0', '#C5A365', '#f2dada'];
         this.color = colors[Math.floor(Math.random() * colors.length)];
     }
 
@@ -59,18 +90,14 @@ class Petal {
         ctx.rotate(this.angle);
         ctx.globalAlpha = this.opacity;
         ctx.fillStyle = this.color;
-        
-        // Added a subtle shadow to lift the petals off the background
         ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
         ctx.shadowBlur = 4;
         ctx.shadowOffsetY = 2;
-        
         ctx.beginPath();
         ctx.moveTo(0, -this.size); 
         ctx.bezierCurveTo(this.size * 0.8, -this.size * 0.5, this.size, this.size * 0.8, 0, this.size * 1.2); 
         ctx.bezierCurveTo(-this.size, this.size * 0.8, -this.size * 0.8, -this.size * 0.5, 0, -this.size);
         ctx.fill();
-        
         ctx.restore();
     }
 }
@@ -141,6 +168,7 @@ function openEnvelope() {
 // 3. INITIALIZATION & SCROLL REVEALS
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
+    applyConfiguration(); // <-- NEW: Inject config data immediately
     document.body.style.overflowY = 'hidden';
     initializeCountdown();
     setupRSVPValidation();
@@ -159,11 +187,11 @@ function handleScrollReveal() {
         }
     }
 }
-
 window.addEventListener("scroll", handleScrollReveal);
 
 function initializeCountdown() {
-    const targetDate = new Date("August 23, 2026 17:30:00").getTime();
+    // Pull the target date from Config
+    const targetDate = new Date(WeddingConfig.date.countdownTarget).getTime();
 
     const interval = setInterval(() => {
         const now = new Date().getTime();
@@ -191,13 +219,12 @@ function initializeCountdown() {
 }
 
 // ==========================================
-// 4. RSVP FORM VALIDATION & GOOGLE SHEETS SUBMISSION
+// 4. RSVP FORM VALIDATION & SUBMISSION
 // ==========================================
-
-const scriptURL = 'https://script.google.com/macros/s/AKfycbwMJ9GR0wUVTq2eWudGRYt4tTDkgtgUGqUDhr1Ye46WPEO_khkQLAnF4m2R_-xO0ElI/exec';
-
 function setupRSVPValidation() {
     const form = document.getElementById('rsvp-form');
+    // Pull the script URL from Config
+    const scriptURL = WeddingConfig.rsvp.googleSheetScriptURL;
     
     if (form) {
         const attendanceRadios = form.querySelectorAll('input[name="Attendance"]');
