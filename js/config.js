@@ -15,10 +15,10 @@ const WeddingConfig = {
 
     // 2. Date & Time
     date: {
-        countdownTarget: "August 23, 2026 17:30:00", // This acts as the official Start Time for the calendar!
+        countdownTarget: "August 23, 2026 17:29:00", // This acts as the official Start Time for the calendar!
         letterFormat: "23 · 08 · 2026",              
         displayCard: "Sunday<br>23 August 2026",     
-        poruwaTime: "5:30 PM",                       
+        poruwaTime: "5:29 PM",                       
         receptionTime: "6:30 PM Onwards",            
         footerFormat: "Twenty Third of August · Twenty Twenty Six" 
     },
@@ -42,10 +42,10 @@ const WeddingConfig = {
     // 5. RSVP System
     rsvp: {
         googleSheetScriptURL: "https://script.google.com/macros/s/AKfycbwMJ9GR0wUVTq2eWudGRYt4tTDkgtgUGqUDhr1Ye46WPEO_khkQLAnF4m2R_-xO0ElI/exec",
-        groomContact: "+94 77 123 4567",
-        groomContactLink: "tel:+94771234567",
-        brideContact: "+94 77 765 4321",
-        brideContactLink: "tel:+94777654321"
+        groomContact: "+94 71 145 7434",
+        groomContactLink: "tel:+94711457434",
+        brideContact: "+94 76 890 0677",
+        brideContactLink: "tel:+94768900677"
     },
 
     // 6. Visual Theme (Canvas Petals)
