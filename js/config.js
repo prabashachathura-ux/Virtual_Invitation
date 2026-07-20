@@ -25,7 +25,7 @@ const WeddingConfig = {
 
     // 3. Family Details
     families: {
-        groomParents: "Mr. & Mrs. Ajith<br>Prasanna",
+        groomParents: "Mr. & Mrs. Ajith<br>Jayasinghe",
         brideParents: "Mr. & Mrs. Lalith<br>Midellawala"
     },
 
