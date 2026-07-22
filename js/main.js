@@ -159,9 +159,9 @@ function openEnvelope() {
         
         setTimeout(() => {
             curtain.style.display = 'none';
-        }, 1500); 
+        }, 1000); 
         
-    }, 5000); 
+    }, 3000); 
 }
 
 // ==========================================
